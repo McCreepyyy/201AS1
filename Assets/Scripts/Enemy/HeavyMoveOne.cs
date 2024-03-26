@@ -9,8 +9,7 @@ public class HeavyMoveOne : MonoBehaviour
     private Animator m_animator;
     private Rigidbody2D m_body2d;
     private Sensor_Bandit m_groundSensor;
-    private bool m_grounded = false;
-    private bool m_combatIdle = false;
+    private Health m_health; // Reference to the Health component
     private bool m_isDead = false;
     private bool m_movingRight = true;
     private Vector3 m_initialPosition;
@@ -26,22 +25,27 @@ public class HeavyMoveOne : MonoBehaviour
         m_initialPosition = transform.position;
         m_leftPosition = m_initialPosition - Vector3.right * m_range / 2;
         m_rightPosition = m_initialPosition + Vector3.right * m_range / 2;
+
+        // Get the Health component attached to the enemy
+        m_health = GetComponent<Health>();
+        if (m_health == null)
+        {
+            Debug.LogError("Health component not found!");
+        }
     }
 
     void Update()
     {
-        //Check if character just landed on the ground
-        if (!m_grounded && m_groundSensor.State())
+        // Check if the enemy is dead
+        if (m_health.currentHealth <= 0)
         {
-            m_grounded = true;
-            m_animator.SetBool("Grounded", m_grounded);
-        }
+            m_isDead = true;
+            m_animator.SetBool("Grounded", true); // Ensure animation state is correct
 
-        //Check if character just started falling
-        if (m_grounded && !m_groundSensor.State())
-        {
-            m_grounded = false;
-            m_animator.SetBool("Grounded", m_grounded);
+            // Make the Rigidbody kinematic when dead to prevent external forces from affecting it
+            m_body2d.isKinematic = true;
+
+            return; // Don't execute further movement logic if dead
         }
 
         // -- Handle automatic movement --
