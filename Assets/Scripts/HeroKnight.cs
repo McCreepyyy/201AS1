@@ -8,6 +8,10 @@ public class HeroKnight : MonoBehaviour
     [SerializeField] float m_rollForce = 6.0f;
     [SerializeField] bool m_noBlood = false;
     [SerializeField] GameObject m_slideDust;
+    [SerializeField] AudioClip attackSound; // Audio clip for attack
+    [SerializeField] float attackVolume = 1.0f; // Volume for attack sound
+    [SerializeField] AudioClip blockSound; // Audio clip for block
+    [SerializeField] float blockVolume = 1.0f; // Volume for block sound
     [SerializeField] Transform attackPoint;
     [SerializeField] float attackRange = 0.5f;
     [SerializeField] int attackDamage = 20;
@@ -143,8 +147,14 @@ public class HeroKnight : MonoBehaviour
             // Deal damage to enemies
             DealDamageToEnemies();
 
-                       // Call Attack Method
+            // Call Attack Method
             combat.Attack();
+
+            // Play attack sound
+            if (attackSound != null)
+            {
+                AudioSource.PlayClipAtPoint(attackSound, transform.position, attackVolume);
+            }
 
             // Reset timer
             m_timeSinceAttack = 0.0f;
@@ -155,13 +165,20 @@ public class HeroKnight : MonoBehaviour
         {
             m_animator.SetTrigger("Block");
             m_animator.SetBool("IdleBlock", true);
+            
+            // Play block sound
+            if (blockSound != null)
+            {
+                AudioSource.PlayClipAtPoint(blockSound, transform.position, blockVolume);
+            }
         }
         else if (Input.GetMouseButtonUp(1))
         {
             m_animator.SetBool("IdleBlock", false);
         }
         // Roll
-        else if (Input.GetKeyDown("left shift") && !m_rolling && !m_isWallSliding)
+        else if (
+Input.GetKeyDown("left shift") && !m_rolling && !m_isWallSliding)
         {
             m_rolling = true;
             m_animator.SetTrigger("Roll");

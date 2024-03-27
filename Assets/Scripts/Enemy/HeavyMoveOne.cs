@@ -3,28 +3,26 @@ using UnityEngine;
 public class HeavyMoveOne : MonoBehaviour
 {
     [SerializeField] float m_speed = 3.0f;
-    [SerializeField] float m_jumpForce = 7.5f;
-    [SerializeField] float m_range = 3f; // Range within which the enemy will move
+    [SerializeField] float m_chaseRange = 5.0f; // Range within which the enemy will start chasing the player
 
+    private Transform m_player; // Reference to the player's transform
     private Animator m_animator;
     private Rigidbody2D m_body2d;
-    private Sensor_Bandit m_groundSensor;
     private Health m_health; // Reference to the Health component
     private bool m_isDead = false;
     private bool m_movingRight = true;
-    private Vector3 m_initialPosition;
-    private Vector3 m_leftPosition;
-    private Vector3 m_rightPosition;
 
     void Start()
     {
         m_animator = GetComponent<Animator>();
         m_body2d = GetComponent<Rigidbody2D>();
-        m_groundSensor = transform.Find("GroundSensor").GetComponent<Sensor_Bandit>();
 
-        m_initialPosition = transform.position;
-        m_leftPosition = m_initialPosition - Vector3.right * m_range / 2;
-        m_rightPosition = m_initialPosition + Vector3.right * m_range / 2;
+        // Find the player object by tag
+        m_player = GameObject.FindGameObjectWithTag("Player").transform;
+        if (m_player == null)
+        {
+            Debug.LogError("Player object not found!");
+        }
 
         // Get the Health component attached to the enemy
         m_health = GetComponent<Health>();
@@ -48,43 +46,58 @@ public class HeavyMoveOne : MonoBehaviour
             return; // Don't execute further movement logic if dead
         }
 
-        // -- Handle automatic movement --
-        if (m_movingRight)
+        // If the player is within chase range, start chasing
+        if (Vector2.Distance(transform.position, m_player.position) <= m_chaseRange)
         {
-            MoveRight();
-            if (transform.position.x >= m_rightPosition.x)
-            {
-                m_movingRight = false;
-                FlipSprite();
-            }
+            ChasePlayer();
         }
         else
         {
-            MoveLeft();
-            if (transform.position.x <= m_leftPosition.x)
-            {
-                m_movingRight = true;
-                FlipSprite();
-            }
+            // Otherwise, stop chasing
+            StopChasing();
         }
     }
 
-    void MoveRight()
+    void ChasePlayer()
     {
-        transform.position = Vector3.MoveTowards(transform.position, m_rightPosition, m_speed * Time.deltaTime);
+        // Calculate the direction towards the player
+        Vector2 direction = (m_player.position - transform.position).normalized;
+
+        // Move towards the player
+        float movement = m_speed * Time.deltaTime;
+        transform.Translate(direction * movement);
         m_animator.SetInteger("AnimState", 2); // Change to the correct parameter name
+
+        // Flip sprite based on movement direction
+        if (direction.x > 0 && !m_movingRight)
+        {
+            FlipSprite(false); // Face right
+        }
+        else if (direction.x < 0 && m_movingRight)
+        {
+            FlipSprite(true); // Face left
+        }
     }
 
-    void MoveLeft()
+    void StopChasing()
     {
-        transform.position = Vector3.MoveTowards(transform.position, m_leftPosition, m_speed * Time.deltaTime);
-        m_animator.SetInteger("AnimState", 2); // Change to the correct parameter name
+        // Implement stopping behavior if needed
     }
 
-    void FlipSprite()
+    void FlipSprite(bool faceLeft)
     {
         Vector3 newScale = transform.localScale;
-        newScale.x *= -1; // Flipping the sprite horizontally
+        if (faceLeft)
+        {
+            newScale.x = Mathf.Abs(newScale.x) * -1; // Flip sprite to face left
+        }
+        else
+        {
+            newScale.x = Mathf.Abs(newScale.x); // Face right
+        }
         transform.localScale = newScale;
+
+        // Update moving direction
+        m_movingRight = !faceLeft;
     }
 }
