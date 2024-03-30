@@ -5,9 +5,9 @@ using UnityEngine;
 public class Footsteps : MonoBehaviour
 {
     public AudioSource footstepsSound;
-    public Rigidbody2D rb2D; // Reference to the Rigidbody2D component
-
-    bool isGrounded = true; // Flag to track if the character is grounded
+    public Rigidbody2D rb2D;
+    // Flag to check if character is grounded
+    bool isGrounded = true;
 
     void Update()
     {
@@ -31,7 +31,7 @@ public class Footsteps : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.Space))
         {
             // Pause or stop footstep sound when jumping
-            footstepsSound.Pause(); // You can use Stop() instead if you prefer
+            footstepsSound.Pause();
         }
     }
 
@@ -49,12 +49,11 @@ public class Footsteps : MonoBehaviour
         }
     }
 
-    // If using Rigidbody2D for jumping, you can detect collision with ground to re-enable footstep sound
     void OnCollisionEnter2D(Collision2D collision)
     {
         if (collision.gameObject.CompareTag("Ground"))
         {
-            footstepsSound.Play(); // Resume footstep sound
+            footstepsSound.Play();
         }
     }
 }

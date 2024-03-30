@@ -2,48 +2,43 @@
 
 public class Bandit : MonoBehaviour
 {
-    [SerializeField] float m_speed = 4.0f;
-    [SerializeField] float m_jumpForce = 7.5f;
+    [SerializeField] float m_jumpForce = 5.0f; // Adjust this value for the desired jump height
+    [SerializeField] float m_jumpDelay = 1.5f; // Jump delay in seconds
 
-    private Animator m_animator;
     private Rigidbody2D m_body2d;
     private Sensor_Bandit m_groundSensor;
     private bool m_grounded = false;
-    private Health m_health;
+    private float m_jumpTimer = 0.0f;
+    private bool m_shouldJump = false;
 
     void Start()
     {
-        m_animator = GetComponent<Animator>();
         m_body2d = GetComponent<Rigidbody2D>();
         m_groundSensor = transform.Find("GroundSensor").GetComponent<Sensor_Bandit>();
-        m_health = GetComponent<Health>();
-        m_health.OnDeath += Die; // Subscribe to the OnDeath event
     }
 
     void Update()
     {
-        // Check if character just landed on the ground
-        if (!m_grounded && m_groundSensor.State())
-        {
-            m_grounded = true;
-            m_animator.SetBool("Grounded", m_grounded);
-        }
+        // Update grounded state
+        m_grounded = m_groundSensor.State();
 
-        // Check if character just started falling
-        if (m_grounded && !m_groundSensor.State())
+        // Jump logic
+        if (m_shouldJump && m_grounded)
         {
-            m_grounded = false;
-            m_animator.SetBool("Grounded", m_grounded);
+            Jump();
+            m_shouldJump = false; // Reset jump flag
         }
-
-        // Set AirSpeed in animator
-        m_animator.SetFloat("AirSpeed", m_body2d.velocity.y);
     }
 
-    // Function to handle enemy death
-    void Die()
+    // Public method to initiate the Bandit's jump
+    public void InitiateJump()
     {
-        m_animator.SetTrigger("Death"); // Trigger death animation
-        Destroy(gameObject, 1.0f); // Destroy the enemy GameObject after 1 second
+        m_shouldJump = true;
+    }
+
+    // Function to handle the Bandit's jump
+    void Jump()
+    {
+        m_body2d.velocity = new Vector2(m_body2d.velocity.x, m_jumpForce);
     }
 }

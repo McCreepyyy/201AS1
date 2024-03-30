@@ -8,9 +8,9 @@ public class HeroKnight : MonoBehaviour
     [SerializeField] float m_rollForce = 6.0f;
     [SerializeField] bool m_noBlood = false;
     [SerializeField] GameObject m_slideDust;
-    [SerializeField] AudioClip attackSound; // Audio clip for attack
+    [SerializeField] AudioClip attackSound; // Audio for Attack
     [SerializeField] float attackVolume = 1.0f; // Volume for attack sound
-    [SerializeField] AudioClip blockSound; // Audio clip for block
+    [SerializeField] AudioClip blockSound; // Audio for Block
     [SerializeField] float blockVolume = 1.0f; // Volume for block sound
     [SerializeField] Transform attackPoint;
     [SerializeField] float attackRange = 0.5f;
@@ -36,7 +36,6 @@ public class HeroKnight : MonoBehaviour
     private Combat combat;
     public int startingHealth = 100;
 
-    // Use this for initialization
     void Start()
     {
         m_animator = GetComponent<Animator>();
@@ -55,6 +54,9 @@ public class HeroKnight : MonoBehaviour
         // Set Initial Health
         health.currentHealth = startingHealth;
 
+        // Subscribe to the OnDeath event to handle player death
+        health.OnDeath += HandleDeath;
+
         // Combat
         combat = GetComponent<Combat>();
         if (combat == null)
@@ -66,6 +68,16 @@ public class HeroKnight : MonoBehaviour
     {
         // Increase timer that controls attack combo
         m_timeSinceAttack += Time.deltaTime;
+
+        // If player is in the death animation, disable movement and attack inputs
+        if (m_animator.GetCurrentAnimatorStateInfo(0).IsName("Death"))
+        {
+            // Set Velocity
+            m_body2d.velocity = Vector2.zero;
+
+            // Prevent attack inputs
+            return;
+        }
 
         // Increase timer that checks roll duration
         if (m_rolling)
@@ -89,7 +101,7 @@ public class HeroKnight : MonoBehaviour
             m_animator.SetBool("Grounded", m_grounded);
         }
 
-        // -- Handle input and movement --
+        // Handle input and movement
         float inputX = Input.GetAxis("Horizontal");
 
         // Swap direction of sprite depending on walk direction
@@ -104,11 +116,11 @@ public class HeroKnight : MonoBehaviour
             m_facingDirection = -1;
         }
 
-        //Set AirSpeed in animator
+        // Set AirSpeed in animator
         m_animator.SetFloat("AirSpeedY", m_body2d.velocity.y);
 
-        // -- Handle Animations --
-        //Wall Slide
+
+        // Wall Slide
         if (m_wallSensorR1.State() || m_wallSensorL1.State())
         {
             // Instantly start wall sliding if against the wall and moving
@@ -129,7 +141,7 @@ public class HeroKnight : MonoBehaviour
         m_animator.SetBool("WallSlide", m_isWallSliding);
 
         // Attack
-        if (Input.GetMouseButtonDown(0) && m_timeSinceAttack > 0.25f && !m_rolling)
+        if (Input.GetMouseButtonDown(0) && m_timeSinceAttack > 0.5f && !m_rolling)
         {
             m_currentAttack++;
 
@@ -160,25 +172,8 @@ public class HeroKnight : MonoBehaviour
             m_timeSinceAttack = 0.0f;
         }
 
-        // Block
-        else if (Input.GetMouseButtonDown(1) && !m_rolling)
-        {
-            m_animator.SetTrigger("Block");
-            m_animator.SetBool("IdleBlock", true);
-            
-            // Play block sound
-            if (blockSound != null)
-            {
-                AudioSource.PlayClipAtPoint(blockSound, transform.position, blockVolume);
-            }
-        }
-        else if (Input.GetMouseButtonUp(1))
-        {
-            m_animator.SetBool("IdleBlock", false);
-        }
         // Roll
-        else if (
-Input.GetKeyDown("left shift") && !m_rolling && !m_isWallSliding)
+        else if (Input.GetKeyDown("left shift") && !m_rolling && !m_isWallSliding)
         {
             m_rolling = true;
             m_animator.SetTrigger("Roll");
@@ -230,7 +225,13 @@ Input.GetKeyDown("left shift") && !m_rolling && !m_isWallSliding)
         }
     }
 
-    // Animation Events
+    // Handle player death
+    void HandleDeath()
+    {
+        // Trigger the death animation
+        m_animator.SetTrigger("Death");
+    }
+    
     // Called in slide animation.
     void AE_SlideDust()
     {
